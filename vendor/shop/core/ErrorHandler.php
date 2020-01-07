@@ -51,17 +51,20 @@ class ErrorHandler {
     }
 
     public function exceptionHandler(\Exception $e) {
-        $this->displayError(get_class($e), $e->getMessage(), $e->getFile(), $e->getLine(), $e->getCode());
+        $this->displayError(get_class($e), $e->getMessage(), $e->getFile(), $e->getLine(), 404));
         $this->logErrors($e->getMessage(), $e->getFile(), $e->getLine(), 404);
 
     }
 
-    public function fatalErrorHandler() {
-        if ($error = error_get_last() AND $error['type'] & (E_ERROR | E_PARSE | E_COMPILE_ERROR | E_CORE_ERROR)) {
-            ob_end_clean();
-            $this->displayError($error['type'], $error['message'], $error['file'], $error['line'], $e->getCode());
-            $this->logErrors($e->getMessage(), $e->getFile(), $e->getLine(), 500);
-
+    public function fatalErrorHandler()
+    {
+        $error = error_get_last();
+        if ($error !== null) {
+            $errorType = $error["type"];
+            $errorFile = $error["file"];
+            $errorLine = $error["line"];
+            $errorMessage = $error["message"];
+        $this->displayError($errorType, $errorFile, $errorLine, 500);
         }
     }
 
@@ -69,9 +72,24 @@ class ErrorHandler {
         error_log("[" . date('Y-m-d H:i:s') . "] Error message:
          {$message}  | File: {$file} | On line {$line}\n=========\n",
             3, ROOT . '/tmp/errors.log');
+//        if (($error !== null) && ($errorType === E_ERROR)) {
+//            // fatal error has occured
+//            $logfilename = dirname(__FILE__, 3) . '/storage/logs/error.log';
+//            $logFile = fopen($logfilename, 'a+');
+//            fprintf(
+//                $logFile,
+//                "[%s] %s: %s in %s:%d\n",
+//                date("Y-m-d H:i:s"),
+//                $errorType,
+//                $errorMessage,
+//                $errorFile,
+//                $errorLine
+//            );
+//            fclose($logFile);
+//        }
     }
 
-    protected function displayError($errorno, $errstr, $errfile, $errline, $response) {
+    protected function displayError($errorno, $errstr, $errfile, $errline, $response = 404) {
 
         http_response_code($response);
         if ($response == 404 && !DEBUG){
@@ -87,5 +105,13 @@ class ErrorHandler {
             require WWW . '/errors/prod.php';
         }
         die;
+    }
+
+    function ob_end_clean_all() {
+        $handlers = ob_list_handlers();
+        while (count($handlers) > 0 && $handlers[count($handlers) - 1] != 'ob_gzhandler' && $handlers[count($handlers) - 1] != 'zlib output compression') {
+            ob_end_clean();
+            $handlers = ob_list_handlers();
+        }
     }
 }
