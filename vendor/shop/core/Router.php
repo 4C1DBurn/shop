@@ -1,16 +1,7 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: m4k5
- * Date: 2020-01-05
- * Time: 23:31
- */
 
 namespace shop;
 
-
-use app\conrollers\MainController;
-use mysql_xdevapi\Exception;
 
 class Router {
 
@@ -33,20 +24,20 @@ class Router {
     public static function dispatch($url) {
         if (self::matchRoute($url)) {
             $controller = 'app\controllers\\' . self::$route['prefix'] . self::$route['controller'] . 'Controller';
-            debug($controller);
             if (class_exists($controller)){
                    $controllerObject = new $controller(self::$route);
                    $action = self::lowerCamelCase(self::$route['action']) . 'Action';
                    if (method_exists($controllerObject, $action)) {
                        $controllerObject->$action();
+                       $controllerObject->getView();
                    } else {
-                       throw new Exception("Method $controller::$action Not Found", 404);
+                       throw new \Exception("Method $controller::$action Not Found", 404);
                    }
             } else {
-                throw new Exception("Controller $controller Not Found", 404);
+                throw new \Exception("Controller $controller Not Found", 404);
             }
         } else {
-            throw new Exception("Page Not Found", 404);
+            throw new \Exception("Page Not Found", 404);
         }
     }
 
@@ -69,7 +60,6 @@ class Router {
 
                 $route['controller'] = self::upperCamelCase($route['controller']);
                 self::$route = $route;
-                debug($route);
                 return true;
             }
         }
